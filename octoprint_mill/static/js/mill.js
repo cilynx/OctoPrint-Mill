@@ -25,17 +25,15 @@ $(function() {
 		// Probe diameter (mm)
 		self.diameter = 3;
 
-		// Maximum X Hit
-		self.xMax = -100000;
-
-		// Minimum X Hit
-		self.xMin = 100000;
-
-		// Maximum Y Hit
-		self.yMax = -100000;
-
-		// Minimum Y Hit
-		self.yMin = 100000;
+		self.xMax = ko.observable(0);
+		self.xMin = ko.observable(0);
+		self.yMax = ko.observable(0);
+		self.yMin = ko.observable(0);
+		self.yMid = ko.computed(function() { return (self.yMax() + self.yMin()) / 2; }, self);
+		self.zMax = ko.observable(0);
+		self.zMin = ko.observable(-50);
+		self.hMill = ko.observable(30);
+		self.dMill = ko.observable(0);
 
 		self.opposite = function(direction) {
 			if(direction == "X+") { return "X-"; }
@@ -58,10 +56,106 @@ $(function() {
 			if(direction == "Y-") { return "X-"; }
 		};
 
+		self.findYcenter = function() {
+			self.mode = "y_center";
+			self.dir = "Y+";
+			// Probe
+			OctoPrint.control.sendGcode("M400 G38.3 Y+100");
+			//alert("Starting findYcenter");
+		}
+
+		// Recv: ok C: X:0.0000 Y:32.9045 Z:0.0000
+		self.position = /X:(.*?) Y:(.*?) Z:(.*?)$/;
+
+		self.setXmax = function() {
+			self.mode = "x_max";
+			OctoPrint.control.sendGcode("M114");
+		}
+
+		self.setXmin = function() {
+			self.mode = "x_min";
+			OctoPrint.control.sendGcode("M114");
+		}
+
+		self.setZmax = function() {
+			self.mode = "z_max";
+			OctoPrint.control.sendGcode("M114");
+		}
+
+		self.setZmin = function() {
+			self.mode = "z_min";
+			OctoPrint.control.sendGcode("M114");
+		}
+
+		self.stage = function() {
+			OctoPrint.control.sendGcode([
+				"G90",
+				"G0 X" + self.xMax(),
+				"G0 Y" + self.yMid(),
+				"G0 Z" + self.zMin()
+			]);
+		}
+
+		self.run = function() {
+			full_cut = self.zMax() - self.zMin();
+			passes = Math.ceil( full_cut / self.hMill() );
+			pass_cut = full_cut / passes;
+			code = "G90\n";
+			for(i = 1; i <= passes; i++) {
+				code += "G0 Z" + (self.zMax() - pass_cut*i) + "\n";
+				code += "G1 X" + self.xMin() + "\n";
+//				code += "G0 Z" + self.zMax() + "\n";
+				code += "G0 X" + self.xMax() + "\n";
+			}
+			code += "G0 Z" + self.zMin();
+			OctoPrint.control.sendGcode(code.split("\n"));
+		}
+
 		self.fromCurrentData = function(data) {
 			_.each(data.logs, function (line) {
-				// If we're tracing
-				if(self.mode == "trace") {
+				if(self.mode == "x_max") {
+					if(match = self.position.exec(line)) {
+						self.xMax(Number(match[1]));
+						self.mode = "";
+					}
+				} else if(self.mode == "x_min") {
+					if(match = self.position.exec(line)) {
+						self.xMin(Number(match[1]));
+						self.mode = "";
+					}
+				} else if(self.mode == "z_max") {
+					if(match = self.position.exec(line)) {
+						self.zMax(Number(match[3]));
+						self.mode = "";
+					}
+				} else if(self.mode == "z_min") {
+					if(match = self.position.exec(line)) {
+						self.zMin(Number(match[3]));
+						self.mode = "";
+					}
+				} else if(self.mode == "y_center") { // If we're finding y-center
+					if(match = self.probeHit.exec(line)) {
+						//alert("Received y_center data");
+						if(self.dir === "Y+") {
+							self.dir = "Y-"
+							self.yMax(Number(match[2]));
+							//alert("yMax is " + self.yMax);
+							OctoPrint.control.sendGcode([
+								"G91 G0 Y-1",
+								"M400",
+								"G38.3 Y-100"
+							]);
+						} else {
+							self.mode = "";
+							self.yMin(Number(match[2]));
+							OctoPrint.control.sendGcode([
+								"G90",
+								"G0 Y" + self.yMid(),
+								"G91"
+							]);
+						}
+					}
+				} else if(self.mode == "trace") { // If we're tracing
 					// If we run into something while G38.3ing
 					if(match = self.probeHit.exec(line)) {
 						match[1] = Number(match[1]);

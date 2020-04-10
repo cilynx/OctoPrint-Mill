@@ -1,5 +1,6 @@
 <ul class="nav nav-tabs">
-  <li class="active"><a data-toggle="tab" href="#joinery">Joinery</a></li>
+  <li class="active"><a data-toggle="tab" href="#slots">Slots</a></li>
+  <li><a data-toggle="tab" href="#joinery">Joinery</a></li>
   <li><a data-toggle="tab" href="#fasteners">Fastener Layout</a></li>
   <li><a data-toggle="tab" href="#surfaces">Surfaces & Pockets</a></li>
 </ul>
@@ -34,7 +35,29 @@
     </div>
   </div>
 
-  <div id="joinery" class="tab-pane active">
+  <div id="slots" class="tab-pane active">
+    <ul class="nav nav-tabs">
+        <li class="active"><a data-toggle="tab" href="#horizontal_slot">Horizontal</a></li>
+    </ul>
+    <div id="horizontal_slot" class="tab-pane active">
+        <h3>Horizontal Slot</h3>
+        <input data-bind="value: hMill" placeholder="hMill"> Mill Height<br>
+        <input data-bind="value: xMax" placeholder="xMax">
+        <button type="button" class="btn btn-default" data-bind="click: setXmax">Set xMax</button><br>
+	    <input data-bind="value: xMin" placeholder="xMin">
+        <button type="button" class="btn btn-default" data-bind="click: setXmin">Set xMin</button><br>
+        <input data-bind="value: yMid" placeholder="yMid">
+        <button type="button" class="btn btn-default" data-bind="click: findYcenter">Probe yMid</button><br>
+	    <input data-bind="value: zMax" placeholder="zMax">
+        <button type="button" class="btn btn-default" data-bind="click: setZmax">Set zMax</button><br>
+	    <input data-bind="value: zMin" placeholder="zMin">
+        <button type="button" class="btn btn-default" data-bind="click: setZmin">Set zMin</button><br>
+        <button type="button" class="btn btn-default" data-bind="click: stage">Stage</button><br>
+        <button type="button" class="btn btn-default" data-bind="click: run">Run</button><br>
+    </div>
+  </div>
+
+  <div id="joinery" class="tab-pane">
     <ul class="nav nav-tabs">
       <li class="active"><a data-toggle="tab" href="#bridle_joint">Bridle</a></li>
       <li><a data-toggle="tab" href="#dado_joint">Dado</a></li>
