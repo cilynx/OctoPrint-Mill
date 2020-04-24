@@ -56,6 +56,18 @@ $(function() {
 			if(direction == "Y-") { return "X-"; }
 		};
 
+		self.findZmax = function() {
+			OctoPrint.control.sendGcode("M400 G38.3 Z-100")
+			self.mode = "z_max";
+			OctoPrint.control.sendGcode("M400 M114");
+		}
+
+		self.findXmax = function() {
+			OctoPrint.control.sendGcode("M400 G38.3 X-100")
+			self.mode = "x_max";
+			OctoPrint.control.sendGcode("M400 M114");
+		}
+
 		self.findYcenter = function() {
 			self.mode = "y_center";
 			self.dir = "Y+";
@@ -117,6 +129,7 @@ $(function() {
 					if(match = self.position.exec(line)) {
 						self.xMax(Number(match[1]));
 						self.mode = "";
+						OctoPrint.control.sendGcode(["G91 G0 X+1"]);
 					}
 				} else if(self.mode == "x_min") {
 					if(match = self.position.exec(line)) {
@@ -127,6 +140,7 @@ $(function() {
 					if(match = self.position.exec(line)) {
 						self.zMax(Number(match[3]));
 						self.mode = "";
+						OctoPrint.control.sendGcode(["G91 G0 Z+1"]);
 					}
 				} else if(self.mode == "z_min") {
 					if(match = self.position.exec(line)) {
