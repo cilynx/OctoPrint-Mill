@@ -22,8 +22,10 @@ $(function() {
 		// Travel distance (mm) between probes
 		self.travelDist = 10;
 
+		self.offset = ko.observable(false);
 		self.cut = ko.observable(false);
 		self.xMax = ko.observable(-1000);
+		self.xMid = ko.computed(function() { return (self.xMax() + self.xMin()) / 2; }, self);
 		self.xMin = ko.observable(1000);
 		self.yMax = ko.observable(-1000);
 		self.yMin = ko.observable(1000);
@@ -56,7 +58,11 @@ $(function() {
 		};
 
 		self.trace = function() {
-			OctoPrint.control.sendGcode("M400 G38.3 X+100")
+			OctoPrint.control.sendGcode("M400 G38.3 X+100 G91 G0 X-1")
+			self.xMin(1000);
+			self.xMax(-1000);
+			self.yMin(1000);
+			self.yMax(-1000);
 			self.mode = "trace";
 			self.dir = "X+";
 			OctoPrint.control.sendGcode("M400 M114");
@@ -212,25 +218,26 @@ $(function() {
 				} else if(self.mode == "trace") { // If we're tracing
 					// If we run into something while G38.3ing
 					if(match = self.probeHit.exec(line)) {
+						// Make sure we're relative
+						// Back off the target a bit
+						// OctoPrint.control.sendGcode("M400 G91 G0 " + self.opposite(self.dir) + "1");
+
+						// Grab X and Y from the PRB: response
 						match[1] = Number(match[1]);
 						match[2] = Number(match[2]);
 						// Track X/Y Max/Min
 						//		  console.log(match[1] + " <=> " + self.xMax);
-						if(match[1] > self.xMax()) { self.xMax(match[1] - self.dProbe()/2) }
-						if(match[1] < self.xMin()) { self.xMin(match[1] + self.dProbe()/2) }
-						if(match[2] > self.yMax()) { self.yMax(match[2] - self.dProbe()/2) }
-						if(match[2] < self.yMin()) { self.yMin(match[2] + self.dProbe()/2) }
+						if(match[1] > self.xMax() + self.dProbe()/2) { self.xMax(match[1] - self.dProbe()/2) }
+						if(match[1] < self.xMin() - self.dProbe()/2) { self.xMin(match[1] + self.dProbe()/2) }
+						if(match[2] > self.yMax() + self.dProbe()/2) { self.yMax(match[2] - self.dProbe()/2) }
+						if(match[2] < self.yMin() - self.dProbe()/2) { self.yMin(match[2] + self.dProbe()/2) }
 
 						console.log(match[0]);
 
-						// Make sure we're relative
-						OctoPrint.control.sendGcode("M400 G91");
-						// Back off the target a bit
-						OctoPrint.control.sendGcode("M400 G0 " + self.opposite(self.dir) + "1");
 						// Travel perpendicular to the target and wait for queue to clear
 						OctoPrint.control.sendGcode("M400 G0 " + self.travel(self.dir) + self.travelDist);
 						// Probe
-						OctoPrint.control.sendGcode("M400 G4S1 M400 G38.3 " + self.dir + self.travelDist );
+						OctoPrint.control.sendGcode("M400 G4S1 M400 G38.3 " + self.dir + self.travelDist + " G91 G0 " + self.opposite(self.dir) + "1");
 						// Probed but didn't hit anything -- probably a corner
 					} else if(self.probeMiss.exec(line)) {
 						// Round the corner
@@ -242,14 +249,14 @@ $(function() {
 							// Clear mode
 							self.mode = "";
 
-							var width = self.xMax()-self.xMin()-self.dProbe();
-							var height = self.yMax()-self.yMin()-self.dProbe();
+							var dimX = self.xMax()-self.xMin();
+							var dimY = self.yMax()-self.yMin();
 
-							alert("dimX: " + width + " dimY:  " + xScale);
+							alert("dimX: " + dimX + " dimY:  " + dimY);
 
 						} else {
 							// Probe
-							OctoPrint.control.sendGcode("M400 G38.3 " + self.dir + (self.travelDist+2));
+							OctoPrint.control.sendGcode("M400 G38.3 " + self.dir + (self.travelDist+2) + " G91 G0 " + self.opposite(self.dir) + "1");
 						}
 					}
 				}
