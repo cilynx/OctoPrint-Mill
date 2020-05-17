@@ -41,21 +41,43 @@
     </ul>
     <div id="horizontal_slot" class="tab-pane active">
         <h3>Horizontal Slot</h3>
+        Cut: <input type="checkbox" data-bind="checked: cut"/><br/>
+        <button type="button" class="btn btn-default" data-bind="click: trace">Trace</button> (Start to the left of the material)<br/>
         <input data-bind="value: hMill" placeholder="hMill"> Mill Height<br>
+        <input data-bind="value: dMill" placeholder="dMill"> Mill Diameter<br>
+        <input data-bind="value: dProbe" placeholder="dProbe"> Probe Diameter<br>
         <input data-bind="value: xMax" placeholder="xMax">
-        <button type="button" class="btn btn-default" data-bind="click: findXmax">Probe xMax</button>
-        <button type="button" class="btn btn-default" data-bind="click: setXmax">Set xMax</button><br>
-	    <input data-bind="value: xMin" placeholder="xMin">
-        <button type="button" class="btn btn-default" data-bind="click: setXmin">Set xMin</button><br>
+            <button type="button" class="btn btn-default" data-bind="click: findXmax">Probe</button>
+            <button type="button" class="btn btn-default" data-bind="click: gotoXmax">Go</button>
+            xMax<br>
+        <input data-bind="value: xMin" placeholder="xMin">
+            <button type="button" class="btn btn-default" data-bind="click: findXmin">Probe</button>
+            <button type="button" class="btn btn-default" data-bind="click: gotoXmin">Go</button>
+            xMin<br>
+        <input data-bind="value: yMax" placeholder="yMax">
+            <button type="button" class="btn btn-default" data-bind="click: findYmax">Probe</button>
+            <button type="button" class="btn btn-default" data-bind="click: gotoYmax">Go</button>
+            yMax<br>
         <input data-bind="value: yMid" placeholder="yMid">
-        <button type="button" class="btn btn-default" data-bind="click: findYcenter">Probe yMid</button><br>
-	    <input data-bind="value: zMax" placeholder="zMax">
-        <button type="button" class="btn btn-default" data-bind="click: findZmax">Probe zMax</button>
-        <button type="button" class="btn btn-default" data-bind="click: setZmax">Set zMax</button><br>
-	    <input data-bind="value: zMin" placeholder="zMin">
-        <button type="button" class="btn btn-default" data-bind="click: setZmin">Set zMin</button><br>
-        <button type="button" class="btn btn-default" data-bind="click: stage">Stage</button><br>
-        <button type="button" class="btn btn-default" data-bind="click: run">Run</button><br>
+            <button type="button" class="btn btn-default" data-bind="click: findYmid">Probe</button>
+            <button type="button" class="btn btn-default" data-bind="click: gotoYmid">Go</button>
+            yMid<br>
+        <input data-bind="value: yMin" placeholder="yMin">
+            <button type="button" class="btn btn-default" data-bind="click: findYmin">Probe</button>
+            <button type="button" class="btn btn-default" data-bind="click: gotoYmin">Go</button>
+            yMin<br>
+        <input data-bind="value: zMax" placeholder="zMax">
+            <button type="button" class="btn btn-default" data-bind="click: findZmax">Probe</button>
+            <button type="button" class="btn btn-default" data-bind="click: gotoZmax">Go</button>
+            zMax<br>
+        <input data-bind="value: zMin" placeholder="zMin">
+            <button type="button" class="btn btn-default" data-bind="click: findZmin">Probe</button>
+            <button type="button" class="btn btn-default" data-bind="click: gotoZmin">Go</button>
+            zMin<br>
+        <br>
+        <br>
+       <button type="button" class="btn btn-default" data-bind="click: stage">Stage</button><br>
+       <button type="button" class="btn btn-default" data-bind="click: run">Run</button><br>
     </div>
   </div>
 
