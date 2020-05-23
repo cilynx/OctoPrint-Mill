@@ -44,7 +44,8 @@
         <input type="checkbox" data-bind="checked: cut"/> Cut (Use G1 as opposed to G0)<br/>
         <input type="checkbox" data-bind="checked: offset"/> Enable cutter offset for moves<br/>
         <br/>
-        <button type="button" class="btn btn-default" data-bind="click: trace">Trace</button> (Start to the left of the material)<br/>
+        <button type="button" class="btn btn-default" data-bind="click: trace">Trace</button> (Start to the left of the stock)<br/>
+        <button type="button" class="btn btn-default" data-bind="click: probe_rect">Probe Rectangular Stock</button> (Start above the stock)<br/>
         <br/>
         <input data-bind="value: hMill" placeholder="hMill"> Mill Height<br>
         <input data-bind="value: dMill" placeholder="dMill"> Mill Diameter<br>
@@ -81,8 +82,8 @@
             <button type="button" class="btn btn-default" data-bind="click: gotoZmax">Go</button>
             zMax<br>
         <input data-bind="value: zMin" placeholder="zMin">
-            <button type="button" class="btn btn-default" data-bind="click: findZmin">Probe</button>
-            <button type="button" class="btn btn-default" data-bind="click: gotoZmin">Go</button>
+            <button type="button" class="btn btn-default">Probe</button>
+            <button type="button" class="btn btn-default">Go</button>
             zMin<br>
         <br/>
         <button type="button" class="btn btn-default" data-bind="click: stage">Stage</button><br>

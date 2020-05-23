@@ -15,6 +15,8 @@ $(function() {
 
 		// Movement direction: "X+", "X-", "Y+", "Y-", "Z+", "Z-"
 		self.dir= "";
+		self.travelDir = null;
+		self.probeDir = null;
 
 		// Probe mode: "backlash", "backtrace", "trace"
 		self.mode = "";
@@ -24,14 +26,14 @@ $(function() {
 
 		self.offset = ko.observable(false);
 		self.cut = ko.observable(false);
-		self.xMax = ko.observable(-1000);
-		self.xMin = ko.observable(1000);
+		self.xMax = ko.observable(null);
+		self.xMin = ko.observable(null);
 		self.xMid = ko.computed(function() { return (self.xMax() + self.xMin()) / 2; }, self);
-		self.yMax = ko.observable(-1000);
-		self.yMin = ko.observable(1000);
+		self.yMax = ko.observable(null);
+		self.yMin = ko.observable(null);
 		self.yMid = ko.computed(function() { return (self.yMax() + self.yMin()) / 2; }, self);
-		self.zMax = ko.observable(0);
-		self.zMin = ko.observable(-50);
+		self.zMax = ko.observable(null);
+		self.zMin = ko.observable(null);
 		self.hMill = ko.observable(30);
 		self.dMill = ko.observable(3*25.4);
 		self.dProbe = ko.observable(3/8*25.4);
@@ -66,6 +68,16 @@ $(function() {
 			self.mode = "trace";
 			self.dir = "X+";
 			OctoPrint.control.sendGcode("M400 M114");
+		}
+
+		self.probe_rect = function() {
+			self.xMin(null); self.xMax(null);
+			self.yMin(null); self.yMax(null);
+			self.zMin(null); self.zMax(null);
+			self.mode = "probe_rect";
+			self.travelDir = "X+";
+			self.probeDir = "Z-";
+			OctoPrint.control.sendGcode("M400 G38.3 Z-100 G91 G0 Z+1 M400");
 		}
 
 		self.findXmax = function() {
@@ -148,26 +160,28 @@ $(function() {
 		self.position = /X:(.*?) Y:(.*?) Z:(.*?)$/;
 
 		self.stage = function() {
+			var offset = self.offset() ? self.dMill()/2 : 0;
+
 			OctoPrint.control.sendGcode([
 				"G90",
-				"G0 X" + self.xMax(),
-				"G0 Y" + self.yMid(),
-				"G0 Z" + self.zMin()
+				"G0 X" + Number(self.xMax() + offset) + " Y" + self.yMid() + " Z" + self.zMax(),
+				"M18"
 			]);
 		}
 
 		self.run = function() {
+		 	offset = self.offset() ? self.dMill()/2 : 0;
 			full_cut = self.zMax() - self.zMin();
 			passes = Math.ceil( full_cut / self.hMill() );
 			pass_cut = full_cut / passes;
 			code = "G90\n";
-			for(i = 1; i <= passes; i++) {
-				code += "G0 Z" + (self.zMax() - pass_cut*i) + "\n";
-				code += "G1 X" + self.xMin() + "\n";
-//				code += "G0 Z" + self.zMax() + "\n";
-				code += "G0 X" + self.xMax() + "\n";
+			for(i = 0; i <= passes; i++) {
+				code += "G0 Z" + (self.zMax() - pass_cut*i) + " M400\n";
+				code += "G1 X" + (self.xMin() - offset) + " M400\n";
+//				code += "G0 Z" + self.zMax() + " M400\n";
+				code += "G0 X" + (self.xMax() + offset) + " M400\n";
 			}
-			code += "G0 Z" + self.zMin();
+			code += "G0 Z" + self.zMax() + "\nM18";
 			OctoPrint.control.sendGcode(code.split("\n"));
 		}
 
@@ -229,6 +243,102 @@ $(function() {
 					if(match = self.position.exec(line)) {
 						self.zMin(Number(match[3]));
 						self.mode = "";
+					}
+				} else if(self.mode == "probe_rect") { // If we're probing rectangular stock dimensions and location
+					// If we hit the stock
+					if(match = self.probeHit.exec(line)) {
+						x = Number(match[1]);
+						y = Number(match[2]);
+						z = Number(match[3]);
+
+						if(self.xMax() == null || x > self.xMax() + self.dProbe()/2) { self.xMax(x - self.dProbe()/2) }
+						if(self.xMin() == null || x < self.xMin() - self.dProbe()/2) { self.xMin(x + self.dProbe()/2) }
+						if(self.yMax() == null || y > self.yMax() + self.dProbe()/2) { self.yMax(y - self.dProbe()/2) }
+						if(self.yMin() == null || y < self.yMin() - self.dProbe()/2) { self.yMin(y + self.dProbe()/2) }
+						if(self.zMax() == null || z > self.zMax()) { self.zMax(z) }
+						if(self.zMin() == null || z < self.zMin()) { self.zMin(z) }
+
+						if(self.probeDir == "Z-") {
+							OctoPrint.control.sendGcode([
+								"G91",										// Relative mode
+								"G0 " + self.travelDir + self.travelDist,	// Travel along the stock
+								"G38.3 Z-5",								// Probe
+								"G0 Z+1",									// Retract from the surface
+								"M400"										// Wait for queue to clear
+							]);
+						} else if(self.probeDir == "X-") { // We hit xMax
+							self.travelDir = "X-";
+							self.probeDir = "Z-";
+							OctoPrint.control.sendGcode([
+								"G91", 						// Relative mode
+								"G0 Z+5", 					// Move back above zMax
+								"G90",						// Absolute mode
+								"G0 X" + self.xMin(),		// Move to whatever xMin has been set to thus far
+								"G91",						// Relative mode
+								"G0 X-" + self.travelDist,	// Travel to the next probe point
+								"M400",						// Wait for queue to clear
+								"G38.3 Z-5",				// Probe
+								"G0 Z+1",					// Retract from the surface
+								"M400"						// Wait for queue to clear
+							]);
+						} else if(self.probeDir == "X+") { // We hit xMin
+							self.travelDir = "Y+";
+							self.probeDir = "Z-";
+							OctoPrint.control.sendGcode([
+								"G91", 						// Relative mode
+								"G0 Z+5", 					// Move back above zMax
+								"G90",						// Absolute mode
+								"G0 X" + self.xMid(),		// Move to xMid since we know that now
+								"G91",						// Relative mode
+								"G0 Y" + self.travelDist,	// Travel to the next probe point
+								"M400",						// Wait for queue to clear
+								"G38.3 Z-5",				// Probe
+								"G0 Z+1",					// Retract from the surface
+								"M400"						// Wait for queue to clear
+							]);
+						} else if(self.probeDir == "Y-") { // We hit yMax
+							self.travelDir = "Y-";
+							self.probeDir = "Z-";
+							OctoPrint.control.sendGcode([
+								"G91", 						// Relative mode
+								"G0 Z+5", 					// Move back above zMax
+								"G90",						// Absolute mode
+								"G0 Y" + self.yMin(),		// Move to whatever yMin has been set to thus far
+								"G91",						// Relative mode
+								"G0 Y-" + self.travelDist,	// Travel to the next probe point
+								"M400",						// Wait for queue to clear
+								"G38.3 Z-5",				// Probe
+								"G0 Z+1",					// Retract from the surface
+								"M400"						// Wait for queue to clear
+							]);
+						} else if(self.probeDir == "Y+") { // We hit yMin
+							self.travelDir = null;
+							self.probeDir = null;
+							self.mode = null;
+							OctoPrint.control.sendGcode([
+								"G91", 						// Relative mode
+								"G0 Z+5", 					// Move back above zMax
+								"G90",						// Absolute mode
+								"G0 X" + self.xMid(),		// Move to xMid since we know that now
+								"G0 Y" + self.yMid(),		// Move to yMid since we know that now
+								"M400",						// Wait for queue to clear
+								"M18"						// Steppers off
+							]);
+
+							var dimX = self.xMax()-self.xMin();
+							var dimY = self.yMax()-self.yMin();
+
+							alert("dimX: " + dimX + " dimY:  " + dimY);
+						}
+					// Didn't hit anything -- must be at an edge
+					} else if(self.probeMiss.exec(line)) {
+						self.probeDir = self.opposite(self.travelDir);
+						OctoPrint.control.sendGcode([
+							"G91",											// Relative mode
+							"G38.3 " + self.probeDir + self.travelDist,		// Probe the edge
+							"G0 " + self.opposite(self.probeDir) + "1"		// Retract from the edge
+						])
+
 					}
 				} else if(self.mode == "trace") { // If we're tracing
 					// If we run into something while G38.3ing
