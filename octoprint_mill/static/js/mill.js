@@ -25,7 +25,8 @@ $(function() {
 		self.travelDist = 10;
 
 		self.offset = ko.observable(false);
-		self.cut = ko.observable(false);
+		self.cutLR = ko.observable(false);
+		self.cutRL = ko.observable(false);
 		self.xMax = ko.observable(null);
 		self.xMin = ko.observable(null);
 		self.xMid = ko.computed(function() { return (self.xMax() + self.xMin()) / 2; }, self);
@@ -162,9 +163,11 @@ $(function() {
 		self.stage = function() {
 			var offset = self.offset() ? self.dMill()/2 : 0;
 
+			var xStage = self.cutLR() && !self.cutRL() ? self.xMin() - offset : self.xMax() + offset;
+
 			OctoPrint.control.sendGcode([
 				"G90",
-				"G0 X" + Number(self.xMax() + offset) + " Y" + self.yMid() + " Z" + self.zMax(),
+				"G0 X" + xStage + " Y" + self.yMid() + " Z" + self.zMax(),
 				"M18"
 			]);
 		}
