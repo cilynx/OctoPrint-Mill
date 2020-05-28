@@ -319,13 +319,12 @@ $(function() {
 							self.probeDir = null;
 							self.mode = null;
 							OctoPrint.control.sendGcode([
-								"G91", 						// Relative mode
-								"G0 Z+5", 					// Move back above zMax
-								"G90",						// Absolute mode
-								"G0 X" + self.xMid(),		// Move to xMid since we know that now
-								"G0 Y" + self.yMid(),		// Move to yMid since we know that now
-								"M400",						// Wait for queue to clear
-								"M18"						// Steppers off
+								"G91", 													// Relative mode
+								"G0 Z+5", 												// Move back above zMax
+								"G90",													// Absolute mode
+								"G0 X" + self.xMid() + " Y" + self.yMid(),	// Move to (xMid,yMid) since we know that now
+								"M400",													// Wait for queue to clear
+								"M18"														// Steppers off
 							]);
 
 							var dimX = self.xMax()-self.xMin();
