@@ -24,9 +24,11 @@ $(function() {
 		// Travel distance (mm) between probes
 		self.travelDist = 10;
 
+		self.g0feed = ko.observable(400);
+		self.g1feed = ko.observable(200);
 		self.offset = ko.observable(false);
 		self.cutLR = ko.observable(false);
-		self.cutRL = ko.observable(false);
+		self.cutRL = ko.observable(true);
 		self.xMax = ko.observable(null);
 		self.xMin = ko.observable(null);
 		self.xMid = ko.computed(function() { return (self.xMax() + self.xMin()) / 2; }, self);
@@ -167,25 +169,46 @@ $(function() {
 
 			OctoPrint.control.sendGcode([
 				"G90",
-				"G0 X" + xStage + " Y" + self.yMid() + " Z" + self.zMax(),
+				"G0 X" + xStage + " Z" + self.zMax(),
 				"M18"
 			]);
 		}
 
 		self.run = function() {
-		 	offset = self.offset() ? self.dMill()/2 : 0;
-			full_cut = self.zMax() - self.zMin();
-			passes = Math.ceil( full_cut / self.hMill() );
-			pass_cut = full_cut / passes;
-			code = "G90\n";
-			for(i = 0; i <= passes; i++) {
-				code += "G0 Z" + (self.zMax() - pass_cut*i) + " M400\n";
-				code += "G1 X" + (self.xMin() - offset) + " M400\n";
-//				code += "G0 Z" + self.zMax() + " M400\n";
-				code += "G0 X" + (self.xMax() + offset) + " M400\n";
+			let fullCut = self.zMax() - self.zMin();
+			let remainingPasses = Math.ceil( fullCut / self.hMill() );
+			let passCut = fullCut / remainingPasses;
+
+			let offset = self.offset() ? self.dMill()/2 : 0;
+
+			let moveRight = self.cutLR() && !self.cutRL();
+
+			let code = ["G90"];
+
+			while(remainingPasses >= 0) {
+				if(moveRight) { // Next move is Left-to-Right
+					if(self.cutLR()) { // Next move is a cut
+						code.push("G1 Z" + (self.zMax() - (fullCut - passCut*remainingPasses)) + " F" + self.g1feed() + " M400");
+						code.push("G1 X" + (self.xMax() + offset) + " F" + self.g1feed() + " M400");
+						remainingPasses--;
+					} else { // Next move is a rapid spring pass
+						code.push("G0 X" + (self.xMax() + offset) + " F" + self.g0feed() + " M400");
+					}
+					moveRight = false;
+				} else { // Next move is Right-to-Left
+					if(self.cutRL()) { // Next move is a cut
+						code.push("G1 Z" + (self.zMax() - (fullCut - passCut*remainingPasses)) + " F" + self.g1feed() + " M400");
+						code.push("G1 X" + (self.xMin() - offset) + " F" + self.g1feed() + " M400");
+						remainingPasses--;
+					} else { // Next move is a rapid spring pass
+						code.push("G0 X" + (self.xMin() - offset) + " F" + self.g0feed() + " M400");
+					}
+					moveRight = true;
+				}
 			}
-			code += "G0 Z" + self.zMax() + "\nM18";
-			OctoPrint.control.sendGcode(code.split("\n"));
+			code.push("G0 Z" + self.zMax() + " F" + self.g0feed());
+			code.push("M18");
+			OctoPrint.control.sendGcode(code);
 		}
 
 		self.fromCurrentData = function(data) {

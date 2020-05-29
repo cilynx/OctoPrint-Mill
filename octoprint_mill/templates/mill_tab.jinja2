@@ -41,9 +41,18 @@
     </ul>
     <div id="horizontal_slot" class="tab-pane active">
         <h3>Horizontal Slot</h3>
-        <input type="checkbox" data-bind="checked: cutLR"/> Cut Left-to-Right<br/>
-        <input type="checkbox" data-bind="checked: cutRL"/> Cut Right-to-Left<br/>
-        <input type="checkbox" data-bind="checked: offset"/> Enable cutter offset for moves<br/>
+        <table>
+        <tr>
+        <td><input type="checkbox" data-bind="checked: cutLR"/> Cut Left-to-Right</td>
+        <td><input data-bind="value: g0feed" placeholder="G0 Feedrate"> G0 Feed</td>
+        </tr><tr>
+        <td><input type="checkbox" data-bind="checked: cutRL"/> Cut Right-to-Left</td>
+        <td><input data-bind="value: g1feed" placeholder="G1 Feedrate"> G1 Feed</td>
+        </tr><tr>
+        <td><input type="checkbox" data-bind="checked: offset"/> Enable cutter offset for moves</td>
+        <td></td>
+        </tr>
+        </table>
         <br/>
         <button type="button" class="btn btn-default" data-bind="click: trace">Trace</button> (Start to the left of the stock)<br/>
         <button type="button" class="btn btn-default" data-bind="click: probe_rect">Probe Rectangular Stock</button> (Start above the stock)<br/>
