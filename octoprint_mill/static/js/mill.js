@@ -63,14 +63,13 @@ $(function() {
 		};
 
 		self.trace = function() {
-			OctoPrint.control.sendGcode("M400 G38.3 X+100 G91 G0 X-1")
 			self.xMin(1000);
 			self.xMax(-1000);
 			self.yMin(1000);
 			self.yMax(-1000);
 			self.mode = "trace";
 			self.dir = "X+";
-			OctoPrint.control.sendGcode("M400 M114");
+			OctoPrint.control.sendGcode("M400 G38.3 X+100 G91 G0 X-1")
 		}
 
 		self.probe_rect = function() {
@@ -84,9 +83,8 @@ $(function() {
 		}
 
 		self.findXmax = function() {
-			OctoPrint.control.sendGcode("M400 G38.3 X-100")
 			self.mode = "x_max";
-			OctoPrint.control.sendGcode("M400 M114");
+			OctoPrint.control.sendGcode("M400 G38.3 X-100");
 		}
 
 		self.findXmid = function() {
@@ -97,9 +95,8 @@ $(function() {
 		}
 
 		self.findXmin = function() {
-			OctoPrint.control.sendGcode("M400 G38.3 X+100")
 			self.mode = "x_min";
-			OctoPrint.control.sendGcode("M400 M114");
+			OctoPrint.control.sendGcode("M400 G38.3 X+100");
 		}
 
 		self.gotoXmax = function() {
@@ -117,9 +114,8 @@ $(function() {
 		}
 
 		self.findYmax = function() {
-			OctoPrint.control.sendGcode("M400 G38.3 Y-100")
 			self.mode = "y_max";
-			OctoPrint.control.sendGcode("M400 M114");
+			OctoPrint.control.sendGcode("M400 G38.3 Y-100");
 		}
 
 		self.findYmid = function() {
@@ -130,9 +126,8 @@ $(function() {
 		}
 
 		self.findYmin = function() {
-			OctoPrint.control.sendGcode("M400 G38.3 Y+100")
 			self.mode = "y_min";
-			OctoPrint.control.sendGcode("M400 M114");
+			OctoPrint.control.sendGcode("M400 G38.3 Y+100");
 		}
 
 		self.gotoYmax = function() {
@@ -150,17 +145,13 @@ $(function() {
 		}
 
 		self.findZmax = function() {
-			OctoPrint.control.sendGcode("M400 G38.3 Z-100")
 			self.mode = "z_max";
-			OctoPrint.control.sendGcode("M400 M114");
+			OctoPrint.control.sendGcode("M400 G38.3 Z-100");
 		}
 
 		self.gotoZmax = function() {
 			OctoPrint.control.sendGcode("M400 G90 G" + Number(self.cut()) + " Z" + self.zMax())
 		}
-
-		// Recv: ok C: X:0.0000 Y:32.9045 Z:0.0000
-		self.position = /X:(.*?) Y:(.*?) Z:(.*?)$/;
 
 		self.stage = function() {
 			var offset = self.offset() ? self.dMill()/2 : 0;
@@ -214,19 +205,19 @@ $(function() {
 		self.fromCurrentData = function(data) {
 			_.each(data.logs, function (line) {
 				if(self.mode == "x_max") {
-					if(match = self.position.exec(line)) {
+					if(match = self.probeHit.exec(line)) {
 						self.xMax(Number(match[1]) - self.dProbe()/2);
 						self.mode = "";
 						OctoPrint.control.sendGcode(["G91 G0 X+1"]);
 					}
 				} else if(self.mode == "x_min") {
-					if(match = self.position.exec(line)) {
+					if(match = self.probeHit.exec(line)) {
 						self.xMin(Number(match[1]) + self.dProbe()/2);
 						self.mode = "";
 						OctoPrint.control.sendGcode(["G91 G0 X-1"]);
 					}
 				} else if(self.mode == "y_max") {
-					if(match = self.position.exec(line)) {
+					if(match = self.probeHit.exec(line)) {
 						self.yMax(Number(match[2]) - self.dProbe()/2);
 						self.mode = "";
 						OctoPrint.control.sendGcode(["G91 G0 Y+1"]);
@@ -254,19 +245,19 @@ $(function() {
 						}
 					}
 				} else if(self.mode == "y_min") {
-					if(match = self.position.exec(line)) {
+					if(match = self.probeHit.exec(line)) {
 						self.yMin(Number(match[2]) + self.dProbe()/2);
 						self.mode = "";
 						OctoPrint.control.sendGcode(["G91 G0 Y-1"]);
 					}
 				} else if(self.mode == "z_max") {
-					if(match = self.position.exec(line)) {
+					if(match = self.probeHit.exec(line)) {
 						self.zMax(Number(match[3]));
 						self.mode = "";
 						OctoPrint.control.sendGcode(["G91 G0 Z+1"]);
 					}
 				} else if(self.mode == "z_min") {
-					if(match = self.position.exec(line)) {
+					if(match = self.probeHit.exec(line)) {
 						self.zMin(Number(match[3]));
 						self.mode = "";
 					}
