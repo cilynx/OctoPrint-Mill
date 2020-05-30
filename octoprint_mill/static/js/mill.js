@@ -101,16 +101,16 @@ $(function() {
 
 		self.gotoXmax = function() {
 			var offset = self.offset() ? self.dMill()/2 : 0;
-			OctoPrint.control.sendGcode("M400 G90 G" + Number(self.cut()) + " X" + Number(self.xMax() + offset))
+			OctoPrint.control.sendGcode("M400 G90 G0 X" + Number(self.xMax() + offset))
 		}
 
 		self.gotoXmid = function() {
-			OctoPrint.control.sendGcode("M400 G90 G" + Number(self.cut()) + " X" + self.xMid())
+			OctoPrint.control.sendGcode("M400 G90 G0 X" + self.xMid())
 		}
 
 		self.gotoXmin = function() {
 			var offset = self.offset() ? self.dMill()/2 : 0;
-			OctoPrint.control.sendGcode("M400 G90 G" + Number(self.cut()) + " X" + Number(self.xMin() - offset))
+			OctoPrint.control.sendGcode("M400 G90 G0 X" + Number(self.xMin() - offset))
 		}
 
 		self.findYmax = function() {
@@ -132,16 +132,16 @@ $(function() {
 
 		self.gotoYmax = function() {
 			var offset = self.offset() ? self.dMill()/2 : 0;
-			OctoPrint.control.sendGcode("M400 G90 G" + Number(self.cut()) + " Y" + Number(self.yMax() + offset))
+			OctoPrint.control.sendGcode("M400 G90 G0 Y" + Number(self.yMax() + offset))
 		}
 
 		self.gotoYmid = function() {
-			OctoPrint.control.sendGcode("M400 G90 G" + Number(self.cut()) + " Y" + self.yMid())
+			OctoPrint.control.sendGcode("M400 G90 G0 Y" + self.yMid())
 		}
 
 		self.gotoYmin = function() {
 			var offset = self.offset() ? self.dMill()/2 : 0;
-			OctoPrint.control.sendGcode("M400 G90 G" + Number(self.cut()) + " Y" + Number(self.yMin() - offset))
+			OctoPrint.control.sendGcode("M400 G90 G0 Y" + Number(self.yMin() - offset))
 		}
 
 		self.findZmax = function() {
@@ -150,7 +150,7 @@ $(function() {
 		}
 
 		self.gotoZmax = function() {
-			OctoPrint.control.sendGcode("M400 G90 G" + Number(self.cut()) + " Z" + self.zMax())
+			OctoPrint.control.sendGcode("M400 G90 G0 Z" + self.zMax())
 		}
 
 		self.stage = function() {
